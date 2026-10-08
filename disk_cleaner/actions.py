@@ -89,7 +89,7 @@ def _guard_form(p, path, cfg, allow_personal):
                   os.path.join(home_raw, "OneDrive"))
     # Nothing inside these is ever a valid target.
     onedrive = [env(v) for v in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial")]
-    onedrive += glob.glob(os.path.join(home_raw, "OneDrive*"))
+    onedrive += [os.path.join(home_raw, "OneDrive")] + glob.glob(os.path.join(home_raw, "OneDrive*"))
     off_limits = roots(os.path.join(home_raw, "Documents"), env("ProgramFiles"), env("ProgramFiles(x86)"),
                        *onedrive, *(os.path.join(home_raw, d) for d in (".ssh", ".gnupg", ".aws", ".azure", ".kube")))
     for r in never + ([] if allow_personal else protected):

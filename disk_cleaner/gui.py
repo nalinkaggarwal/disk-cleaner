@@ -409,7 +409,7 @@ class App(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._build()
         self.bind_all("<MouseWheel>", self._on_wheel)
-        self.after(100, self._poll)
+        self._poll_id = self.after(100, self._poll)
         self.after(150, self._to_front)
         if preloaded:
             self._set_results(*preloaded)
@@ -428,6 +428,13 @@ class App(tk.Tk):
             self.focus_force()
         except tk.TclError:
             pass
+
+    def destroy(self):
+        try:
+            self.after_cancel(self._poll_id)
+        except (AttributeError, tk.TclError, ValueError):
+            pass
+        super().destroy()
 
     def report_callback_exception(self, exc, val, tb):
         # Under --windowed there is no console, so write unexpected GUI errors to the log file.
@@ -795,7 +802,7 @@ class App(tk.Tk):
                 except Exception:
                     log.exception("error while handling a background result")
         finally:
-            self.after(100, self._poll)
+            self._poll_id = self.after(100, self._poll)
 
     def _set_results(self, findings, errors):
         self.findings = [f for f in findings if f.id not in self.ignored]
