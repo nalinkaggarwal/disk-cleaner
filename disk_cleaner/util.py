@@ -117,12 +117,20 @@ def ps_quote(value):
     return "".join(c * 2 if c in "'\u2018\u2019\u201a\u201b" else c for c in str(value))
 
 
-def powershell(script, timeout=120):
+def _powershell_args(script):
     enc = base64.b64encode(script.encode("utf-16-le")).decode()
-    return subprocess.run(
-        ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", enc],
-        capture_output=True, text=True, errors="replace", creationflags=CREATE_NO_WINDOW, timeout=timeout,
-    )
+    return ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", enc]
+
+
+def powershell(script, timeout=120):
+    return subprocess.run(_powershell_args(script), capture_output=True, text=True, errors="replace",
+                          creationflags=CREATE_NO_WINDOW, timeout=timeout)
+
+
+def powershell_start(script):
+    """Start a PowerShell script without waiting, so the caller can report progress while it runs."""
+    return subprocess.Popen(_powershell_args(script), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                            errors="replace", creationflags=CREATE_NO_WINDOW)
 
 
 _INSTANCE_NAME = r"Local\DiskCleaner.SingleInstance"

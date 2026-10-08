@@ -5,13 +5,15 @@ import glob
 import json
 import logging
 import os
+import re
 import secrets
 import stat
 import subprocess
 import time
 
 from . import config, software
-from .util import CREATE_NO_WINDOW, disk_usage, is_admin, is_reparse, powershell, process_running, ps_quote
+from .util import (CREATE_NO_WINDOW, disk_usage, is_admin, is_reparse, powershell, powershell_start,
+                   process_running, ps_quote)
 
 log = logging.getLogger("disk_cleaner")
 
@@ -290,10 +292,33 @@ def apply_plan(items, dry_run=False, cfg=None, progress=None):
     return results
 
 
-def run_elevated(items, dry_run=False):
+def _progress_files(token):
+    return list(config.DATA_DIR.glob(f"progress_{token}_*.json"))
+
+
+def _read_progress(token, last, progress):
+    """Report the newest progress note the elevated helper has written. Returns the number reported."""
+    newest = last
+    for f in _progress_files(token):
+        try:
+            n = int(f.stem.rsplit("_", 1)[1])
+        except ValueError:
+            continue
+        if n > newest:
+            try:
+                data = json.loads(f.read_text(encoding="utf-8"))
+                progress(int(data["done"]), int(data["total"]), str(data["text"]))
+                newest = n
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
+    return newest
+
+
+def run_elevated(items, dry_run=False, progress=None):
     """Run administrator-only findings in an elevated copy of this program (one UAC prompt).
     Only finding ids cross the boundary: the elevated copy scans again and acts on its own results, so a
-    modified plan file cannot make it delete or run anything the scanners would not have offered."""
+    modified plan file cannot make it delete or run anything the scanners would not have offered.
+    progress(done, total, text) is called as the elevated copy reports back."""
     config.ensure_dirs()
     token = secrets.token_hex(8)
     plan = config.DATA_DIR / f"plan_{token}.json"
@@ -305,17 +330,29 @@ def run_elevated(items, dry_run=False):
     ps = (f"try {{ Start-Process -FilePath '{ps_quote(exe)}' -ArgumentList {arglist} "
           f"-WorkingDirectory '{ps_quote(workdir)}' -Verb RunAs -Wait -WindowStyle Hidden; 'ok' }} "
           "catch { 'declined' }")
+    declined = False
     try:
-        declined = "declined" in (powershell(ps, timeout=7200).stdout or "")
-    except subprocess.TimeoutExpired:
-        declined = False
-    try:
+        proc = powershell_start(ps)
+        started, last = time.time(), 0
+        while True:
+            try:
+                stdout, _ = proc.communicate(timeout=0.3)
+                declined = "declined" in (stdout or "")
+                break
+            except subprocess.TimeoutExpired:
+                if time.time() - started > 7200:
+                    proc.kill()
+                    break
+                if progress:
+                    last = _read_progress(token, last, progress)
+        if progress:
+            _read_progress(token, last, progress)
         if declined or not out.exists():
             why = "Administrator prompt was declined" if declined else "elevated run produced no result"
             return [{"id": i["id"], "title": i["title"], "ok": False, "freed": 0, "message": why} for i in items]
         return json.loads(out.read_text(encoding="utf-8"))
     finally:
-        for f in (plan, out):
+        for f in [plan, out] + _progress_files(token):
             try:
                 f.unlink()
             except OSError:
@@ -336,7 +373,9 @@ def execute(findings, dry_run=False, personal_confirmed=False, progress=None):
     if adm_items:
         if progress:
             progress(len(now_items), total, "Waiting for administrator approval\u2026")
-        results += run_elevated(adm_items, dry_run)
+        results += run_elevated(
+            adm_items, dry_run,
+            progress=(lambda d, t, text: progress(len(now_items) + d, total, text)) if progress else None)
     if progress:
         progress(total, total, "Finishing\u2026")
     if not dry_run and any(r["id"] == "win:dism" and r["ok"] for r in results):
@@ -352,16 +391,32 @@ def apply_from_files(plan_path, result_path):
     from . import scanners
     with open(plan_path, encoding="utf-8") as fh:
         data = json.load(fh)
+    match = re.fullmatch(r"result_([0-9a-f]{16})\.json", os.path.basename(result_path))
+    counter = [0]
+
+    def report(done, total, text):
+        # Best effort and exclusive-create, so a pre-planted file or link can never be written through.
+        if not match:
+            return
+        counter[0] += 1
+        path = os.path.join(os.path.dirname(result_path), f"progress_{match.group(1)}_{counter[0]}.json")
+        try:
+            with open(path, "x", encoding="utf-8") as fh:
+                json.dump({"done": done, "total": total, "text": text}, fh)
+        except OSError:
+            pass
+    ids = [str(i) for i in data.get("ids", [])]
+    report(0, len(ids), "Approved. Checking this PC as administrator\u2026")
     findings, _ = scanners.scan(config.load_config(), config.load_state())
     by_id = {f.id: f for f in findings}
     items, res = [], []
-    for fid in (str(i) for i in data.get("ids", [])):
+    for fid in ids:
         f = by_id.get(fid)
         if f is None or not f.needs_admin or not f.selectable:
             res.append({"id": fid, "title": fid, "ok": False, "freed": 0,
                         "message": "no longer offered as an administrator item"})
         else:
             items.append({"id": f.id, "title": f.title, "action": f.action})
-    res += apply_plan(items, bool(data.get("dry_run")))
+    res += apply_plan(items, bool(data.get("dry_run")), progress=report)
     with open(result_path, "x", encoding="utf-8") as fh:  # exclusive create: never write through a planted file
         json.dump(res, fh)

@@ -543,7 +543,7 @@ class App(tk.Tk):
         foot = tk.Frame(self, bg=WHITE, padx=px(24), pady=px(13))
         foot.pack(side="bottom", fill="x")
         tk.Frame(self, height=1, bg=BORDER).pack(side="bottom", fill="x")
-        self.btn_del = Btn(foot, "Delete selected…", self.delete_ticked, "danger", sc, font=(F, 11, "bold"))
+        self.btn_del = Btn(foot, "Delete selected", self.delete_ticked, "danger", sc, font=(F, 11, "bold"))
         self.btn_del.config(padx=px(26), pady=px(9))
         self.btn_del.pack(side="right")
         tk.Label(foot, text="Preview only (don't delete)", bg=WHITE, fg=MUTED, font=(F, 10)).pack(
