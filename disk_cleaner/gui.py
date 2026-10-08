@@ -306,6 +306,77 @@ class Overlay:
             cb()
 
 
+class Busy:
+    """Full-window overlay with a spinner and live progress text, shown while a delete runs."""
+    W, H = 460, 250
+
+    def __init__(self, app, title):
+        self.app, self.title, self.detail, self.frac, self.angle = app, title, "", None, 0
+        s = self.scrim = tk.Canvas(app, bg="#0c2624", highlightthickness=0, cursor="watch")
+        s.place(x=0, y=0, relwidth=1, relheight=1)
+        tk.Misc.lift(s)
+        s.bind("<Configure>", lambda e: self._draw())
+        s.focus_set()
+        self._tick()
+
+    def alive(self):
+        try:
+            return bool(self.scrim.winfo_exists())
+        except tk.TclError:
+            return False
+
+    def update(self, title=None, detail=None, frac=None):
+        if title is not None:
+            self.title = title
+        if detail is not None:
+            self.detail = detail
+        self.frac = frac
+        if self.alive():
+            self._draw()
+
+    def _draw(self):
+        s, px = self.scrim, self.app._px
+        cw, ch = s.winfo_width(), s.winfo_height()
+        if cw < 50 or ch < 50:
+            return
+        W, H = min(px(self.W), cw - px(40)), px(self.H)
+        x0, y0 = (cw - W) // 2, (ch - H) // 2
+        cx = cw // 2
+        s.delete("all")
+        _round_rect(s, x0 + px(3), y0 + px(7), x0 + W + px(3), y0 + H + px(7), px(16), fill="#081c1a", outline="")
+        _round_rect(s, x0, y0, x0 + W, y0 + H, px(16), fill=BG, outline=BORDER)
+        r, sy = px(22), y0 + px(52)
+        s.create_oval(cx - r, sy - r, cx + r, sy + r, outline="#cfe0dc", width=px(5))
+        s.create_arc(cx - r, sy - r, cx + r, sy + r, start=self.angle, extent=95, style="arc", outline=TEAL,
+                     width=px(5), tags="spin")
+        s.create_text(cx, y0 + px(100), text=self.title, fill=INK, font=(F, 15, "bold"))
+        s.create_text(cx, y0 + px(138), text=self.detail, fill=MUTED, font=(F, 10), width=W - px(60), justify="center")
+        bx0, bx1, by = x0 + px(40), x0 + W - px(40), y0 + px(180)
+        if self.frac is not None:
+            s.create_line(bx0, by, bx1, by, width=px(8), capstyle="round", fill="#d5e3e0")
+            fx = bx0 + (bx1 - bx0) * max(0.02, min(1.0, self.frac))
+            s.create_line(bx0, by, fx, by, width=px(8), capstyle="round", fill=TEAL)
+        s.create_text(cx, y0 + H - px(24), text="Please keep this window open.", fill=SOFT, font=(F, 9))
+
+    def _tick(self):
+        if not self.alive():
+            return
+        self.angle = (self.angle - 22) % 360
+        try:
+            self.scrim.itemconfigure("spin", start=self.angle)
+            self.scrim.after(40, self._tick)
+        except tk.TclError:
+            pass
+
+    def destroy(self):
+        if getattr(self.app, "busy_box", None) is self:
+            self.app.busy_box = None
+        try:
+            self.scrim.destroy()
+        except tk.TclError:
+            pass
+
+
 # ------------------------------------------------------------------ app
 class App(tk.Tk):
     def __init__(self, preloaded=None):
@@ -332,6 +403,7 @@ class App(tk.Tk):
         self.risk_filter = "ALL"
         self.overlay = None
         self.dialog_box = None
+        self.busy_box = None
         self._deleting = False
         self._pending_rescan = False
         self.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -355,7 +427,7 @@ class App(tk.Tk):
                 "Disk Cleaner is still deleting. Closing now can leave things half done.",
                 ok="Close anyway", cancel="Keep waiting", danger=True, default_ok=False):
             return
-        for slot in ("dialog_box", "overlay"):
+        for slot in ("dialog_box", "overlay", "busy_box"):
             ov = getattr(self, slot, None)
             if ov is not None:
                 ov.destroy()  # releases anything waiting inside confirm()
@@ -683,8 +755,16 @@ class App(tk.Tk):
             self._rebuild_list()
             self._busy(False, "")
             self.notify("Scan failed", msg[1], error=True)
+        elif kind == "exec_progress":
+            if self.busy_box is not None:
+                done, total, title = msg[1:]
+                self.busy_box.update(detail=f"{title}   ({min(done + 1, total)} of {total})"
+                                     if done < total and not title.endswith("…") else title,
+                                     frac=done / total if total else None)
         elif kind == "exec_fatal":
             self._deleting = False
+            if self.busy_box is not None:
+                self.busy_box.destroy()
             self._busy(False, "")
             self.notify("Could not finish", msg[1], error=True)
             self.start_scan()
@@ -1033,11 +1113,15 @@ class App(tk.Tk):
         if self.busy:  # a scan finished or started while the questions were open
             return
         self._deleting = not dry
-        self._busy(True, "Working… (an administrator prompt may be waiting behind this window)" if admin else "Working…")
+        self._busy(True, "Working…")
+        self.busy_box = Busy(self, "Running a preview\u2026" if dry else "Deleting\u2026")
+        self.busy_box.update(detail="Starting\u2026", frac=0.0)
 
         def work():
             try:
-                self.q.put(("exec_done", dry, *actions.execute(chosen, dry, personal_confirmed=bool(personal))))
+                self.q.put(("exec_done", dry, *actions.execute(
+                    chosen, dry, personal_confirmed=bool(personal),
+                    progress=lambda d, t, title: self.q.put(("exec_progress", d, t, title)))))
             except Exception as ex:
                 log.exception("delete failed")
                 self.q.put(("exec_fatal", str(ex)))
@@ -1045,6 +1129,8 @@ class App(tk.Tk):
 
     def _exec_done(self, dry, results, before, after):
         self._deleting = False
+        if self.busy_box is not None:
+            self.busy_box.destroy()
         self._busy(False, "")
         self._refresh_usage()
         px = self._px

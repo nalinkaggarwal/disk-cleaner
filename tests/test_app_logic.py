@@ -167,6 +167,14 @@ class ExecuteTests(unittest.TestCase):
         self.assertTrue(local.call_args_list[0][0][0][0]["personal_confirmed"])
         self.assertFalse(local.call_args_list[1][0][0][0]["personal_confirmed"])
 
+    def test_progress_is_reported_item_by_item_including_the_admin_wait(self):
+        seen = []
+        with mock.patch.object(actions, "is_admin", return_value=False),                 mock.patch.object(actions, "run_elevated", return_value=[{"id": "a", "ok": True}]):
+            actions.execute([self.user, self.admin], dry_run=True, progress=lambda d, t, title: seen.append((d, t, title)))
+        self.assertEqual(seen[0], (0, 2, "user item"))
+        self.assertTrue(any("administrator" in title for _, _, title in seen))
+        self.assertEqual(seen[-1][:2], (2, 2))
+
     def test_dry_run_changes_nothing_and_writes_no_state(self):
         with mock.patch.object(actions, "is_admin", return_value=True), \
                 mock.patch.object(actions.config, "save_state") as save:

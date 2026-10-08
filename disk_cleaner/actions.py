@@ -263,11 +263,14 @@ def _builtin_action(action, dry_run):
     return r.returncode == 0, 0, "done" if r.returncode == 0 else f"exit code {r.returncode}"
 
 
-def apply_plan(items, dry_run=False, cfg=None):
-    """items: list of dicts {id,title,action}. Returns list of result dicts."""
+def apply_plan(items, dry_run=False, cfg=None, progress=None):
+    """items: list of dicts {id,title,action}. Returns list of result dicts.
+    progress(done, total, title) is called before each item."""
     cfg = cfg or config.load_config()
     results = []
-    for it in items:
+    for n, it in enumerate(items):
+        if progress:
+            progress(n, len(items), it["title"])
         a = it["action"]
         try:
             kind = a["type"]
@@ -319,7 +322,7 @@ def run_elevated(items, dry_run=False):
                 pass
 
 
-def execute(findings, dry_run=False, personal_confirmed=False):
+def execute(findings, dry_run=False, personal_confirmed=False, progress=None):
     """High-level entry used by the GUI. Returns (results, free_before, free_after).
     Personal photo/video items are refused unless personal_confirmed is True (the GUI's second confirmation)."""
     _, _, before = disk_usage()
@@ -328,9 +331,14 @@ def execute(findings, dry_run=False, personal_confirmed=False):
     admin_ids = {f.id for f in findings if f.needs_admin}
     now_items = [i for i in items if i["id"] not in admin_ids or is_admin()]
     adm_items = [i for i in items if i["id"] in admin_ids and not is_admin()]
-    results = apply_plan(now_items, dry_run)
+    total = len(items)
+    results = apply_plan(now_items, dry_run, progress=(lambda d, t, title: progress(d, total, title)) if progress else None)
     if adm_items:
+        if progress:
+            progress(len(now_items), total, "Waiting for administrator approval\u2026")
         results += run_elevated(adm_items, dry_run)
+    if progress:
+        progress(total, total, "Finishing\u2026")
     if not dry_run and any(r["id"] == "win:dism" and r["ok"] for r in results):
         st = config.load_state()
         st["last_dism"] = datetime.date.today().isoformat()
