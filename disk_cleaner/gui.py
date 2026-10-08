@@ -452,6 +452,16 @@ class App(tk.Tk):
                      bg="#fffbeb", fg="#92400e", font=(F, 10)).pack(side="left")
             Btn(strip, "Run as administrator", self.restart_admin, "secondary", sc).pack(side="right")
 
+        selrow = tk.Frame(self, bg=BG, padx=px(24), pady=px(4))
+        selrow.pack(fill="x")
+        self.select_all = Check(selrow, px(22), BG, command=self._select_all_clicked)
+        self.select_all.pack(side="left", padx=(0, px(10)))
+        lbl = tk.Label(selrow, text="Select all", bg=BG, fg=INK, font=(F, 10, "bold"), cursor="hand2")
+        lbl.pack(side="left")
+        lbl.bind("<Button-1>", lambda e: self.select_all._click(None))
+        self.select_all_info = tk.Label(selrow, bg=BG, fg=MUTED, font=(F, 9))
+        self.select_all_info.pack(side="right")
+
         status = tk.Frame(self, bg=BG, padx=px(24), pady=px(5))
         status.pack(side="bottom", fill="x")
         self.status = tk.Label(status, bg=BG, fg=MUTED, font=(F, 9))
@@ -940,7 +950,26 @@ class App(tk.Tk):
         self._sync_cats()
         self._update_footer()
 
+    def _select_all_clicked(self):
+        on = self.select_all.get()
+        for f in self.shown():
+            if f.selectable:
+                self._set_checked(f, on)
+        self._after_change()
+
+    def _sync_select_all(self):
+        items = [f for f in self.shown() if f.selectable]
+        n = sum(1 for f in items if f.id in self.checked)
+        if items and n == len(items):
+            self.select_all.set(True)
+        elif n:
+            self.select_all.set_mixed()
+        else:
+            self.select_all.set(False)
+        self.select_all_info.config(text=f"{len(items)} item{'s' if len(items) != 1 else ''} you can select")
+
     def _update_footer(self):
+        self._sync_select_all()
         chosen = [f for f in self.shown() if f.id in self.checked and f.selectable]
         n, total = len(chosen), sum(f.size for f in chosen)
         self.sel_lbl.config(text=f"{n} selected  ·  about {human(total)} to free" if n else "Nothing selected yet",

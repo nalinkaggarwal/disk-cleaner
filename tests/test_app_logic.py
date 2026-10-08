@@ -259,6 +259,25 @@ class GuiResilienceTests(unittest.TestCase):
         app.set_filter("ALL")
         self.assertIn("2 selected", app.sel_lbl.cget("text"))
 
+    def test_select_all_ticks_only_what_is_visible_and_tracks_the_selection(self):
+        from disk_cleaner.models import INFO, REVIEW
+        app = self.app
+        mk = lambda i, risk, sel=True: Finding(i, "c", i, "", 1 << 20, "r", risk, {"type": "builtin", "name": "x"}, selectable=sel)
+        app.findings = [mk("a", SAFE), mk("b", SAFE), mk("c", REVIEW), mk("d", INFO, False)]
+        app.scanned = True
+        app.set_filter(SAFE)
+        app.select_all._click(None)
+        self.assertEqual(app.checked, {"a", "b"})
+        self.assertTrue(app.select_all.get())
+        app.set_filter("ALL")
+        self.assertTrue(app.select_all.mixed)
+        app.select_all._click(None)  # mixed -> clear
+        self.assertEqual(app.checked, set())
+        app.select_all._click(None)
+        self.assertEqual(app.checked, {"a", "b", "c"})  # the info-only row can never be ticked
+        app.set_filter(INFO)
+        self.assertIn("0 items", app.select_all_info.cget("text"))
+
     def test_a_scan_that_fails_leaves_the_list_in_a_finished_state(self):
         app = self.app
         with mock.patch.object(app, "notify") as note:
