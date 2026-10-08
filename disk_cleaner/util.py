@@ -162,11 +162,24 @@ def release_instance():
         _instance_handle = None
 
 
-def focus_existing(title):
-    """Best effort: bring the already-open window to the front."""
-    u = ctypes.windll.user32
-    hwnd = u.FindWindowW(None, title)
-    if hwnd:
+def bring_to_front(hwnd):
+    """Raise and activate a window even when Windows would normally leave a newly started program behind."""
+    u, k = ctypes.windll.user32, ctypes.windll.kernel32
+    cur = k.GetCurrentThreadId()
+    fg_thread = u.GetWindowThreadProcessId(u.GetForegroundWindow(), None)
+    attached = bool(fg_thread and fg_thread != cur and u.AttachThreadInput(fg_thread, cur, True))
+    try:
         if u.IsIconic(hwnd):
             u.ShowWindow(hwnd, 9)  # SW_RESTORE
+        u.BringWindowToTop(hwnd)
         u.SetForegroundWindow(hwnd)
+    finally:
+        if attached:
+            u.AttachThreadInput(fg_thread, cur, False)
+
+
+def focus_existing(title):
+    """Best effort: bring the already-open window to the front."""
+    hwnd = ctypes.windll.user32.FindWindowW(None, title)
+    if hwnd:
+        bring_to_front(hwnd)

@@ -10,7 +10,7 @@ from tkinter import font as tkfont, ttk
 
 from . import __version__, actions, config, scanners, scheduler
 from .models import INFO, REVIEW, SAFE
-from .util import disk_usage, focus_existing, human, is_admin, release_instance, single_instance
+from .util import bring_to_front, disk_usage, focus_existing, human, is_admin, release_instance, single_instance
 
 log = logging.getLogger("disk_cleaner")
 
@@ -410,12 +410,24 @@ class App(tk.Tk):
         self._build()
         self.bind_all("<MouseWheel>", self._on_wheel)
         self.after(100, self._poll)
+        self.after(150, self._to_front)
         if preloaded:
             self._set_results(*preloaded)
         else:
             self.start_scan()
             if not config.load_state().get("first_run_done"):
                 self.after(400, self.first_run)
+
+    def _to_front(self):
+        """A program started from Explorer can open behind other windows; raise it once at startup."""
+        try:
+            self.lift()
+            self.attributes("-topmost", True)
+            self.after(250, lambda: self.attributes("-topmost", False))
+            bring_to_front(ctypes.windll.user32.GetParent(self.winfo_id()) or self.winfo_id())
+            self.focus_force()
+        except tk.TclError:
+            pass
 
     def report_callback_exception(self, exc, val, tb):
         # Under --windowed there is no console, so write unexpected GUI errors to the log file.
