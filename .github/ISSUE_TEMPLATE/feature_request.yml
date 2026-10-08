@@ -1,5 +1,5 @@
 name: Suggestion or new rule
-description: Propose a feature, or something Disk Cleaner should (or should not) suggest removing
+description: Propose a feature, or something TickClean should (or should not) suggest removing
 labels: ["enhancement"]
 body:
   - type: textarea

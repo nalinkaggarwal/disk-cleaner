@@ -15,7 +15,7 @@ from . import config, software
 from .util import (CREATE_NO_WINDOW, disk_usage, is_admin, is_reparse, powershell, powershell_start,
                    process_running, ps_quote)
 
-log = logging.getLogger("disk_cleaner")
+log = logging.getLogger("tickclean")
 
 BUILTINS = {
     "empty_recycle_bin": "Clear-RecycleBin -Force -ErrorAction SilentlyContinue",

@@ -1,7 +1,7 @@
 """Writes version_info.txt (the Windows version resource PyInstaller embeds in the exe).
 
 SignPath requires product name and version to be set in the signed binary, so the
-release build reads the version from disk_cleaner/__init__.py - one place to bump.
+release build reads the version from tickclean/__init__.py - one place to bump.
 
     python make_version_info.py            writes version_info.txt
     python make_version_info.py --print    prints the 4-part version, e.g. 0.1.0.0
@@ -11,12 +11,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-PRODUCT = "Disk Cleaner"
-COMPANY = "Disk Cleaner contributors"
+PRODUCT = "TickClean"
+COMPANY = "TickClean contributors"
 
 
 def version():
-    text = (ROOT / "disk_cleaner" / "__init__.py").read_text(encoding="utf-8")
+    text = (ROOT / "tickclean" / "__init__.py").read_text(encoding="utf-8")
     raw = re.search(r'__version__\s*=\s*"([^"]+)"', text).group(1)
     nums = [int(x) for x in re.findall(r"\d+", raw)][:4]
     return tuple(nums + [0] * (4 - len(nums)))
@@ -35,9 +35,9 @@ def main():
       StringStruct('CompanyName', '{COMPANY}'),
       StringStruct('FileDescription', '{PRODUCT}'),
       StringStruct('FileVersion', '{dotted}'),
-      StringStruct('InternalName', 'DiskCleaner'),
-      StringStruct('LegalCopyright', 'Copyright (c) 2026 Disk Cleaner contributors. MIT License'),
-      StringStruct('OriginalFilename', 'DiskCleaner.exe'),
+      StringStruct('InternalName', 'TickClean'),
+      StringStruct('LegalCopyright', 'Copyright (c) 2026 TickClean contributors. MIT License'),
+      StringStruct('OriginalFilename', 'TickClean.exe'),
       StringStruct('ProductName', '{PRODUCT}'),
       StringStruct('ProductVersion', '{dotted}')])]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])

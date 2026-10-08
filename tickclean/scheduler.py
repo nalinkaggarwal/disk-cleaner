@@ -7,7 +7,8 @@ from pathlib import Path
 from . import config
 from .util import powershell, ps_quote
 
-TASK = "DiskCleaner Scan"
+TASK = "TickClean Scan"
+LEGACY_TASK = "DiskCleaner Scan"  # name used before the project was renamed
 DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 FREQUENCIES = ["Daily", "Weekly"]
 _TIME = re.compile(r"([01]\d|2[0-3]):[0-5]\d")
@@ -27,11 +28,11 @@ def validate(frequency, day, time_str):
 def _stable_exe(exe):
     """The task must not depend on where the user happened to save the download, so it runs a private copy.
     Returns (path, warning). Raises OSError if there is no usable copy."""
-    dest = config.DATA_DIR / "app" / "DiskCleaner.exe"
+    dest = config.DATA_DIR / "app" / "TickClean.exe"
     dest.parent.mkdir(parents=True, exist_ok=True)
     if Path(exe).resolve() == dest.resolve():
         return str(dest), ""
-    tmp = dest.with_name("DiskCleaner.exe.new")
+    tmp = dest.with_name("TickClean.exe.new")
     try:
         shutil.copy2(exe, tmp)
         os.replace(tmp, dest)
@@ -66,6 +67,7 @@ def install(frequency="Weekly", day="Sunday", time_str="10:00"):
 $ProgressPreference = 'SilentlyContinue'
 $ErrorActionPreference = 'Stop'
 try {{
+Unregister-ScheduledTask -TaskName '{LEGACY_TASK}' -Confirm:$false -ErrorAction SilentlyContinue
 $a = New-ScheduledTaskAction -Execute '{ps_quote(exe)}' -Argument '{ps_quote(argline)}' -WorkingDirectory '{ps_quote(workdir)}'
 $t = {trigger}
 $s = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Seconds 0)
@@ -81,7 +83,8 @@ Register-ScheduledTask -TaskName '{TASK}' -Action $a -Trigger $t -Settings $s -D
 
 
 def remove():
-    r = powershell(f"Unregister-ScheduledTask -TaskName '{TASK}' -Confirm:$false -ErrorAction SilentlyContinue", 30)
+    r = powershell(f"Unregister-ScheduledTask -TaskName '{TASK}' -Confirm:$false -ErrorAction SilentlyContinue; "
+                   f"Unregister-ScheduledTask -TaskName '{LEGACY_TASK}' -Confirm:$false -ErrorAction SilentlyContinue", 30)
     if config.FROZEN:
         shutil.rmtree(config.DATA_DIR / "app", ignore_errors=True)
     return r.returncode == 0, "Schedule removed."

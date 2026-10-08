@@ -43,15 +43,15 @@ jobs:
         if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: DiskCleaner-unsigned
-          path: dist/DiskCleaner.exe
+          name: TickClean-unsigned
+          path: dist/TickClean.exe
       - name: Sign with SignPath
         if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
         uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3.0
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'disk-cleaner' }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'tickclean' }}
           signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
           github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
           wait-for-completion: true
@@ -64,21 +64,21 @@ jobs:
         shell: pwsh
         run: |
           Get-ChildItem signed
-          Copy-Item signed\DiskCleaner.exe dist\DiskCleaner.exe -Force
-          $sig = Get-AuthenticodeSignature dist\DiskCleaner.exe
+          Copy-Item signed\TickClean.exe dist\TickClean.exe -Force
+          $sig = Get-AuthenticodeSignature dist\TickClean.exe
           "Signature status: $($sig.Status), signer: $($sig.SignerCertificate.Subject)"
           if ($sig.Status -ne 'Valid') { throw "Signed exe does not have a valid signature" }
 
       - name: Checksum
         shell: pwsh
         run: |
-          $h = (Get-FileHash dist\DiskCleaner.exe -Algorithm SHA256).Hash.ToLower()
-          [IO.File]::WriteAllText("$PWD\dist\DiskCleaner.exe.sha256", "$h  DiskCleaner.exe`n")
+          $h = (Get-FileHash dist\TickClean.exe -Algorithm SHA256).Hash.ToLower()
+          [IO.File]::WriteAllText("$PWD\dist\TickClean.exe.sha256", "$h  TickClean.exe`n")
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: |
-            dist/DiskCleaner.exe
-            dist/DiskCleaner.exe.sha256
+            dist/TickClean.exe
+            dist/TickClean.exe.sha256
           fail_on_unmatched_files: true
           generate_release_notes: true
           prerelease: ${{ startsWith(github.ref_name, 'v0.') }}

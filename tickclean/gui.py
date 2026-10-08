@@ -12,7 +12,7 @@ from . import __version__, actions, config, scanners, scheduler
 from .models import INFO, REVIEW, SAFE
 from .util import bring_to_front, disk_usage, focus_existing, human, is_admin, release_instance, single_instance
 
-log = logging.getLogger("disk_cleaner")
+log = logging.getLogger("tickclean")
 
 # ------------------------------------------------------------------ theme
 # "Fresh teal": calm, trustworthy, light. Teal = go / safe, amber = look first, red = destructive.
@@ -382,7 +382,7 @@ class App(tk.Tk):
     def __init__(self, preloaded=None):
         _dpi_aware()
         super().__init__()
-        self.title(f"Disk Cleaner {__version__}")
+        self.title(f"TickClean {__version__}")
         self.scale = max(1.0, self.winfo_fpixels("1i") / 96.0)
         self.option_add("*Toplevel.background", BG)
         try:
@@ -443,7 +443,7 @@ class App(tk.Tk):
     def _on_close(self):
         if self._deleting and not self.confirm(
                 "Deletion in progress",
-                "Disk Cleaner is still deleting. Closing now can leave things half done.",
+                "TickClean is still deleting. Closing now can leave things half done.",
                 ok="Close anyway", cancel="Keep waiting", danger=True, default_ok=False):
             return
         for slot in ("dialog_box", "overlay", "busy_box"):
@@ -675,7 +675,7 @@ class App(tk.Tk):
         sub = f"+ {human(d['rev'])} more to review" if d["rev"] else "nothing else to review"
         c.create_text(px0 + px(20), px(104), anchor="nw", text=sub, fill=MUTED, font=(F, 9))
         right = px0 - px(28)
-        c.create_text(m, px(20), anchor="nw", text="Disk Cleaner", fill="white", font=(F, 22, "bold"))
+        c.create_text(m, px(20), anchor="nw", text="TickClean", fill="white", font=(F, 22, "bold"))
         c.create_text(m, px(58), anchor="nw", width=right - m, fill="#ccfbf1", font=(F, 10),
                       text="Reclaim your disk space, safely. Every suggestion has a reason, and nothing is deleted "
                            "until you say so.")
@@ -1191,7 +1191,7 @@ class App(tk.Tk):
     # ---------------------------------------------------------------- dialogs
     def restart_admin(self):
         if self.busy:
-            self.notify("Please wait", "Disk Cleaner is busy. Try again when it has finished.")
+            self.notify("Please wait", "TickClean is busy. Try again when it has finished.")
             return
         exe, lead, workdir = config.launcher()
         release_instance()
@@ -1267,7 +1267,7 @@ class App(tk.Tk):
     def open_settings(self):
         px = self._px
         win, body, foot = self._dialog(700, None, "Settings",
-                                       "Tell Disk Cleaner where to look and what counts as old. Nothing here deletes anything.")
+                                       "Tell TickClean where to look and what counts as old. Nothing here deletes anything.")
 
         def textbox(card, title, hint, lines, top=0):
             self._field_label(card, title, hint, wrap=270).pack(anchor="w", pady=(top, 0))
@@ -1348,7 +1348,7 @@ class App(tk.Tk):
         st["first_run_done"] = True
         config.save_state(st)
         s = self.cfg["schedule"]
-        win, body, foot = self._dialog(620, None, "Welcome to Disk Cleaner",
+        win, body, foot = self._dialog(620, None, "Welcome to TickClean",
                                        "Free up disk space, safely.")
         pts = tk.Frame(body, bg=BG)
         pts.pack(fill="x")
@@ -1510,6 +1510,6 @@ class App(tk.Tk):
 def run(preloaded=None):
     if not single_instance():
         if preloaded is None:
-            focus_existing(f"Disk Cleaner {__version__}")
+            focus_existing(f"TickClean {__version__}")
         return
     App(preloaded).mainloop()

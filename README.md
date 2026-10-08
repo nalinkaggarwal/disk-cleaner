@@ -1,12 +1,12 @@
-# Disk Cleaner
+# TickClean
 
-[![tests](https://github.com/nalinkaggarwal/disk-cleaner/actions/workflows/ci.yml/badge.svg)](https://github.com/nalinkaggarwal/disk-cleaner/actions/workflows/ci.yml)
+[![tests](https://github.com/nalinkaggarwal/tickclean/actions/workflows/ci.yml/badge.svg)](https://github.com/nalinkaggarwal/tickclean/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Free up disk space on Windows, safely. Disk Cleaner finds things you probably no longer need, shows them in a list with a **reason for each one**, and deletes only the items **you tick**.
+Free up disk space on Windows, safely. TickClean finds things you probably no longer need, shows them in a list with a **reason for each one**, and deletes only the items **you tick**.
 
 - **Nothing is deleted without your confirmation.** Every row is a suggestion; you tick what you want and confirm.
-- **Zero runtime dependencies.** Pure Python standard library (tkinter, winreg). Or download the single `DiskCleaner.exe`, no Python needed.
+- **Zero runtime dependencies.** Pure Python standard library (tkinter, winreg). Or download the single `TickClean.exe`, no Python needed.
 - **No network access, no telemetry.** Everything stays on your machine.
 - **Safe by design.** A guard re-checks every path right before it is deleted (see [Safety model](#safety-model)).
 - **Optional schedule.** A background scan that opens the window only when there is something worth cleaning.
@@ -30,7 +30,7 @@ Each suggestion has a risk label: **Safe** (rebuilds itself), **Review** (read t
 
 ## Download (no Python needed)
 
-1. Open the **Releases** page of this repository and download `DiskCleaner.exe`.
+1. Open the **Releases** page of this repository and download `TickClean.exe`.
 2. Double-click it. The first time, it asks whether you want automatic background checks. You can say no and change your mind later with the **Schedule** button.
 
 Releases are code-signed once the SignPath Foundation certificate is active (see [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)). Until then, or while SmartScreen is still learning the file, Windows may say the app is unrecognized: click **More info**, then **Run anyway**. You can verify the download against the `.sha256` file on the release page, or build the exe yourself from this source. The release exe is built by GitHub Actions from the public source.
@@ -40,10 +40,10 @@ Releases are code-signed once the SignPath Foundation certificate is active (see
 Needs only Python 3.10+ on Windows. No packages to install.
 
 ```
-python -m disk_cleaner
+python -m tickclean
 ```
 
-or `pip install .` and run `disk-cleaner`.
+or `pip install .` and run `tickclean`.
 
 ## Build the exe yourself
 
@@ -52,16 +52,16 @@ pip install -r requirements-build.txt
 build_exe.bat
 ```
 
-The result is `dist\DiskCleaner.exe`. Pushing a tag such as `v0.1.0` makes GitHub Actions build and publish it automatically.
+The result is `dist\TickClean.exe`. Pushing a tag such as `v0.1.0` makes GitHub Actions build and publish it automatically.
 
 Other commands:
 
 ```
-python -m disk_cleaner --scan            # text report, nothing is changed
-python -m disk_cleaner --scan --json
-python -m disk_cleaner --install-schedule
-python -m disk_cleaner --remove-schedule
-python -m disk_cleaner --schedule-status
+python -m tickclean --scan            # text report, nothing is changed
+python -m tickclean --scan --json
+python -m tickclean --install-schedule
+python -m tickclean --remove-schedule
+python -m tickclean --schedule-status
 ```
 
 ## Code signing and privacy
@@ -85,11 +85,11 @@ Found a way around this? Please read [SECURITY.md](SECURITY.md).
 
 ## Schedule
 
-Click **Schedule** in the app, or use `--install-schedule`. It creates a per-user Windows Task Scheduler task ("DiskCleaner Scan") that runs a private copy of the exe stored in `%LOCALAPPDATA%\DiskCleaner\app`, so moving or deleting the file you downloaded does not break it. The task scans silently and opens the window only if it can free at least your chosen number of GB or the drive is below your chosen free-space percentage. If the PC was off at the scheduled time, it runs at the next opportunity. After updating the app, press **Save & turn on** in Schedule once to refresh that copy.
+Click **Schedule** in the app, or use `--install-schedule`. It creates a per-user Windows Task Scheduler task ("TickClean Scan") that runs a private copy of the exe stored in `%LOCALAPPDATA%\TickClean\app`, so moving or deleting the file you downloaded does not break it. The task scans silently and opens the window only if it can free at least your chosen number of GB or the drive is below your chosen free-space percentage. If the PC was off at the scheduled time, it runs at the next opportunity. After updating the app, press **Save & turn on** in Schedule once to refresh that copy.
 
 ## Teaching it new rules
 
-Software rules live in `disk_cleaner/rules.json`:
+Software rules live in `tickclean/rules.json`:
 
 ```json
 {"id": "my-rule", "pattern": "^SomeAnnoyingApp", "risk": "REVIEW", "reason": "Why a person should consider removing it."}
@@ -99,7 +99,7 @@ Software rules live in `disk_cleaner/rules.json`:
 
 ## Your data
 
-Settings, the "don't suggest again" list and logs are stored in `%LOCALAPPDATA%\DiskCleaner` (override with the `DISK_CLEANER_HOME` environment variable). Only one window can be open at a time.
+Settings, the "don't suggest again" list and logs are stored in `%LOCALAPPDATA%\TickClean` (override with the `TICKCLEAN_HOME` environment variable). Only one window can be open at a time.
 
 ## Limitations
 

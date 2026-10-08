@@ -37,4 +37,4 @@ jobs:
             Write-Output "::error title=unittest failed::$tail"
             exit 1
           }
-      - run: python -m disk_cleaner --version
+      - run: python -m tickclean --version

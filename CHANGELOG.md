@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.1] - Renamed to TickClean
+
+### Changed
+- The project is now called **TickClean** (it was "Disk Cleaner", a name too common to find by searching). The program is `TickClean.exe`, the command and Python package are `tickclean`, the settings folder is `%LOCALAPPDATA%\TickClean`, the environment variable is `TICKCLEAN_HOME`, and the scheduled task is "TickClean Scan".
+- Existing settings are copied from the old `DiskCleaner` folder on first run, and an old "DiskCleaner Scan" task is removed when you turn the schedule on or off.
+
 ## [0.1.0] - First public release
 
 ### Safety
@@ -18,5 +24,5 @@ All notable changes to this project are documented here. The format follows [Kee
 - Second confirmation before personal photos and videos are deleted.
 - Preview-only mode, a "don't suggest this again" list, and settings for folders and age thresholds.
 - Optional Task Scheduler job that scans in the background and opens the window only when there is enough to clean.
-- Standalone single-file `DiskCleaner.exe` (no Python needed) with version metadata and an icon.
+- Standalone single-file `TickClean.exe` (no Python needed) with version metadata and an icon.
 - Modern window: filter by risk, in-window dialogs, single running copy.

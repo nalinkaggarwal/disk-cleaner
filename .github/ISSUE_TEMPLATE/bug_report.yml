@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping. **If Disk Cleaner deleted something it should not have, say so clearly in the title.**
+        Thanks for helping. **If TickClean deleted something it should not have, say so clearly in the title.**
         For security problems please do not use this form; see SECURITY.md.
   - type: textarea
     id: what
@@ -17,8 +17,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Disk Cleaner version
-      description: Shown in the window title (for example 0.1.0), or run `DiskCleaner.exe --version`.
+      label: TickClean version
+      description: Shown in the window title (for example 0.1.0), or run `TickClean.exe --version`.
     validations:
       required: true
   - type: dropdown
@@ -26,8 +26,8 @@ body:
     attributes:
       label: How are you running it?
       options:
-        - DiskCleaner.exe from a release
-        - From source (python -m disk_cleaner)
+        - TickClean.exe from a release
+        - From source (python -m tickclean)
     validations:
       required: true
   - type: input
@@ -44,5 +44,5 @@ body:
     id: logs
     attributes:
       label: Log excerpt
-      description: The log is in %LOCALAPPDATA%\DiskCleaner\logs. Remove anything private (user names, folder names) before pasting.
+      description: The log is in %LOCALAPPDATA%\TickClean\logs. Remove anything private (user names, folder names) before pasting.
       render: text

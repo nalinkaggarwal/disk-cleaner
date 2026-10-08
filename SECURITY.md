@@ -1,6 +1,6 @@
 # Security policy
 
-Disk Cleaner deletes files and can start uninstallers, so security and safety reports are taken seriously.
+TickClean deletes files and can start uninstallers, so security and safety reports are taken seriously.
 
 ## Supported versions
 

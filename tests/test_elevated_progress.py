@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from unittest import mock
 
-from disk_cleaner import actions, config
-from disk_cleaner.models import Finding, SAFE
+from tickclean import actions, config
+from tickclean.models import Finding, SAFE
 
 
 class ElevatedProgressTests(unittest.TestCase):
@@ -26,7 +26,7 @@ class ElevatedProgressTests(unittest.TestCase):
         planted.write_text("planted", encoding="utf-8")
         admin = Finding("a", "c", "admin item", "", 1, "r", SAFE, {"type": "builtin", "name": "dism_cleanup"},
                         needs_admin=True)
-        with mock.patch("disk_cleaner.scanners.scan", return_value=([admin], [])):
+        with mock.patch("tickclean.scanners.scan", return_value=([admin], [])):
             actions.apply_from_files(str(plan), str(out))
         self.assertEqual(planted.read_text(encoding="utf-8"), "planted", "an existing file is never written through")
         notes = [json.loads(f.read_text(encoding="utf-8")) for f in sorted(self.tmp.glob("progress_*_[2-9].json"))]
@@ -37,7 +37,7 @@ class ElevatedProgressTests(unittest.TestCase):
         token = "fedcba9876543210"
         plan, out = self.tmp / f"plan_{token}.json", self.tmp / f"result_{token}.json"
         plan.write_text(json.dumps({"ids": [], "dry_run": True}), encoding="utf-8")
-        with mock.patch("disk_cleaner.scanners.scan", return_value=([], [])):
+        with mock.patch("tickclean.scanners.scan", return_value=([], [])):
             actions.apply_from_files(str(plan), str(out))
         first = json.loads((self.tmp / f"progress_{token}_1.json").read_text(encoding="utf-8"))
         self.assertIn("Approved", first["text"])

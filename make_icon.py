@@ -1,4 +1,4 @@
-"""Draws disk_cleaner/icon.ico with the standard library only (run: python make_icon.py).
+"""Draws tickclean/icon.ico with the standard library only (run: python make_icon.py).
 
 Design: teal rounded square, a white disk with a slice taken out (space freed) and a hub hole.
 """
@@ -7,7 +7,7 @@ import struct
 import zlib
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parent / "disk_cleaner" / "icon.ico"
+OUT = Path(__file__).resolve().parent / "tickclean" / "icon.ico"
 SIZES = [16, 24, 32, 48, 64, 128, 256]
 SS = 4  # supersampling per axis
 

@@ -7,9 +7,9 @@ import time
 import unittest
 from unittest import mock
 
-from disk_cleaner import __main__ as entry
-from disk_cleaner import actions, config, scheduler, util
-from disk_cleaner.models import Finding, SAFE
+from tickclean import __main__ as entry
+from tickclean import actions, config, scheduler, util
+from tickclean.models import Finding, SAFE
 
 WIN = sys.platform == "win32"
 
@@ -55,7 +55,7 @@ class SchedulerTests(unittest.TestCase):
         import shutil
         tmp = tempfile.mkdtemp(prefix="dc_sched_")
         self.addCleanup(shutil.rmtree, tmp, True)
-        src = os.path.join(tmp, "DiskCleaner.exe")
+        src = os.path.join(tmp, "TickClean.exe")
         with open(src, "wb") as fh:
             fh.write(b"new")
         with mock.patch.object(config, "DATA_DIR", config.Path(tmp) / "data"):
@@ -63,14 +63,42 @@ class SchedulerTests(unittest.TestCase):
             self.assertEqual(warn, "")
             with open(path, "rb") as fh:
                 self.assertEqual(fh.read(), b"new")
-            with mock.patch("disk_cleaner.scheduler.shutil.copy2", side_effect=OSError("locked")):
+            with mock.patch("tickclean.scheduler.shutil.copy2", side_effect=OSError("locked")):
                 path2, warn2 = scheduler._stable_exe(src)
             self.assertEqual(path2, path)
             self.assertIn("older one", warn2)
         with mock.patch.object(config, "DATA_DIR", config.Path(tmp) / "empty"):
-            with mock.patch("disk_cleaner.scheduler.shutil.copy2", side_effect=OSError("locked")):
+            with mock.patch("tickclean.scheduler.shutil.copy2", side_effect=OSError("locked")):
                 with self.assertRaises(OSError):
                     scheduler._stable_exe(src)
+
+
+class RenameMigrationTests(unittest.TestCase):
+    def test_settings_from_the_old_folder_are_copied_once_and_never_overwritten(self):
+        import shutil
+        import tempfile
+        base = config.Path(tempfile.mkdtemp(prefix="dc_mig_"))
+        self.addCleanup(shutil.rmtree, base, True)
+        old, new = base / "DiskCleaner", base / "TickClean"
+        old.mkdir()
+        (old / "config.json").write_text('{"min_item_mb": 7}', encoding="utf-8")
+        (old / "ignored.json").write_text('["x"]', encoding="utf-8")
+        (old / "app").mkdir()
+        self.assertTrue(config.migrate_legacy_settings(new))
+        self.assertEqual((new / "config.json").read_text(encoding="utf-8"), '{"min_item_mb": 7}')
+        self.assertTrue((new / "ignored.json").exists())
+        self.assertFalse((new / "app").exists(), "only settings files are carried over")
+        (new / "config.json").write_text('{"min_item_mb": 99}', encoding="utf-8")
+        self.assertFalse(config.migrate_legacy_settings(new), "an existing folder is left alone")
+        self.assertIn("99", (new / "config.json").read_text(encoding="utf-8"))
+
+    def test_nothing_happens_without_an_old_folder(self):
+        import shutil
+        import tempfile
+        base = config.Path(tempfile.mkdtemp(prefix="dc_mig_"))
+        self.addCleanup(shutil.rmtree, base, True)
+        self.assertFalse(config.migrate_legacy_settings(base / "TickClean"))
+        self.assertFalse((base / "TickClean").exists())
 
 
 class ConfigTests(unittest.TestCase):
@@ -118,9 +146,9 @@ class ScheduledRunTests(unittest.TestCase):
         total = 1000 * 1024 ** 3
         with mock.patch.object(config, "load_config", return_value=cfg), \
                 mock.patch.object(config, "load_ignored", return_value=set(ignored)), \
-                mock.patch("disk_cleaner.scanners.scan", return_value=(findings, [])), \
-                mock.patch("disk_cleaner.util.disk_usage", return_value=(total, total, int(total * free_pct / 100))), \
-                mock.patch("disk_cleaner.gui.run") as run:
+                mock.patch("tickclean.scanners.scan", return_value=(findings, [])), \
+                mock.patch("tickclean.util.disk_usage", return_value=(total, total, int(total * free_pct / 100))), \
+                mock.patch("tickclean.gui.run") as run:
             entry._scheduled(mock.MagicMock())
         return run
 
@@ -189,9 +217,9 @@ class ExecuteTests(unittest.TestCase):
 @unittest.skipUnless(WIN, "Windows only")
 class UtilTests(unittest.TestCase):
     def test_single_instance_lock_can_be_released_and_retaken(self):
-        name = rf"Local\DiskCleaner.Test.{os.getpid()}"  # not the real name, so an open app cannot interfere
+        name = rf"Local\TickClean.Test.{os.getpid()}"  # not the real name, so an open app cannot interfere
         child = [sys.executable, "-c",
-                 "import sys; from disk_cleaner import util; util._INSTANCE_NAME = sys.argv[1]; "
+                 "import sys; from tickclean import util; util._INSTANCE_NAME = sys.argv[1]; "
                  "print(util.single_instance())", name]
 
         def other():
@@ -215,7 +243,7 @@ class UtilTests(unittest.TestCase):
 class GuiResilienceTests(unittest.TestCase):
     def setUp(self):
         try:
-            from disk_cleaner import gui
+            from tickclean import gui
             self.gui = gui
             self.app = gui.App(preloaded=([], []))
         except Exception as e:  # no display available
@@ -254,7 +282,7 @@ class GuiResilienceTests(unittest.TestCase):
         self.assertLess(time.time() - started, 5)
 
     def test_ticks_survive_switching_filters_but_only_visible_items_are_acted_on(self):
-        from disk_cleaner.models import REVIEW
+        from tickclean.models import REVIEW
         app = self.app
         a = Finding("a", "c", "safe one", "", 1 << 20, "r", SAFE, {"type": "builtin", "name": "x"})
         b = Finding("b", "c", "review one", "", 1 << 20, "r", REVIEW, {"type": "builtin", "name": "x"})
@@ -268,7 +296,7 @@ class GuiResilienceTests(unittest.TestCase):
         self.assertIn("2 selected", app.sel_lbl.cget("text"))
 
     def test_select_all_ticks_only_what_is_visible_and_tracks_the_selection(self):
-        from disk_cleaner.models import INFO, REVIEW
+        from tickclean.models import INFO, REVIEW
         app = self.app
         mk = lambda i, risk, sel=True: Finding(i, "c", i, "", 1 << 20, "r", risk, {"type": "builtin", "name": "x"}, selectable=sel)
         app.findings = [mk("a", SAFE), mk("b", SAFE), mk("c", REVIEW), mk("d", INFO, False)]
@@ -300,7 +328,7 @@ class GuiResilienceTests(unittest.TestCase):
     def test_a_rescan_requested_while_busy_runs_afterwards(self):
         app = self.app
         with mock.patch.object(app, "start_scan", wraps=app.start_scan) as scan, \
-                mock.patch("disk_cleaner.scanners.scan", return_value=([], [])):
+                mock.patch("tickclean.scanners.scan", return_value=([], [])):
             app._busy(True, "Working")
             app.start_scan()
             self.assertTrue(app._pending_rescan)

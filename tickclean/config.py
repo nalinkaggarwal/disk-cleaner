@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -15,16 +16,36 @@ def launcher():
         return sys.executable, [], str(Path(sys.executable).parent)
     exe = sys.executable
     pw = os.path.join(os.path.dirname(exe), "pythonw.exe")
-    return (pw if os.path.exists(pw) else exe), ["-m", "disk_cleaner"], str(REPO_DIR)
+    return (pw if os.path.exists(pw) else exe), ["-m", "tickclean"], str(REPO_DIR)
 
 
 # All per-user data (settings, ignore list, logs) lives outside the code folder.
-DATA_DIR = Path(os.environ.get("DISK_CLEANER_HOME") or
-                (Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") / "DiskCleaner"))
+DATA_DIR = Path(os.environ.get("TICKCLEAN_HOME") or
+                (Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") / "TickClean"))
 LOG_DIR = DATA_DIR / "logs"
 CONFIG_FILE = DATA_DIR / "config.json"
 IGNORED_FILE = DATA_DIR / "ignored.json"
 STATE_FILE = DATA_DIR / "state.json"
+
+
+def migrate_legacy_settings(data_dir=None):
+    """The project was called 'Disk Cleaner' before 0.1.1. Copy the old settings over once, never overwrite."""
+    data_dir = Path(data_dir or DATA_DIR)
+    old = data_dir.parent / "DiskCleaner"
+    if data_dir.exists() or not old.is_dir():
+        return False
+    try:
+        data_dir.mkdir(parents=True)
+        for name in ("config.json", "ignored.json", "state.json"):
+            if (old / name).is_file():
+                shutil.copy2(old / name, data_dir / name)
+        return True
+    except OSError:
+        return False
+
+
+if not os.environ.get("TICKCLEAN_HOME"):
+    migrate_legacy_settings()
 
 DEFAULTS = {
     # Folders searched for stale build output (node_modules, build, .dart_tool, ...). Add your own in Settings.

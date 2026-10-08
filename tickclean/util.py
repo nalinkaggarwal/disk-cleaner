@@ -133,7 +133,7 @@ def powershell_start(script):
                             errors="replace", creationflags=CREATE_NO_WINDOW)
 
 
-_INSTANCE_NAME = r"Local\DiskCleaner.SingleInstance"
+_INSTANCE_NAME = r"Local\TickClean.SingleInstance"
 _instance_handle = None
 
 

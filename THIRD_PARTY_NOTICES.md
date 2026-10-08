@@ -1,7 +1,7 @@
 # Third-party notices
 
-Disk Cleaner's own code is MIT licensed (see `LICENSE`) and has no runtime dependencies. The standalone
-`DiskCleaner.exe` is built with PyInstaller and bundles the following, unmodified:
+TickClean's own code is MIT licensed (see `LICENSE`) and has no runtime dependencies. The standalone
+`TickClean.exe` is built with PyInstaller and bundles the following, unmodified:
 
 | Component | Used for | License |
 |---|---|---|

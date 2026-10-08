@@ -3,14 +3,14 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "disk-cleaner"
+name = "tickclean"
 dynamic = ["version"]
 description = "Windows disk cleaner that lists unused files and programs with a reason for each, and deletes only what you tick."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "Disk Cleaner contributors" }]
+authors = [{ name = "TickClean contributors" }]
 keywords = ["windows", "disk-cleanup", "cleaner", "storage", "tkinter"]
 dependencies = []
 classifiers = [
@@ -25,21 +25,21 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nalinkaggarwal/disk-cleaner"
-Issues = "https://github.com/nalinkaggarwal/disk-cleaner/issues"
-Changelog = "https://github.com/nalinkaggarwal/disk-cleaner/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/nalinkaggarwal/tickclean"
+Issues = "https://github.com/nalinkaggarwal/tickclean/issues"
+Changelog = "https://github.com/nalinkaggarwal/tickclean/blob/main/CHANGELOG.md"
 
 [project.scripts]
-disk-cleaner = "disk_cleaner.__main__:main"
+tickclean = "tickclean.__main__:main"
 
 [project.gui-scripts]
-disk-cleaner-gui = "disk_cleaner.__main__:main"
+tickclean-gui = "tickclean.__main__:main"
 
 [tool.setuptools]
-packages = ["disk_cleaner"]
+packages = ["tickclean"]
 
 [tool.setuptools.dynamic]
-version = { attr = "disk_cleaner.__version__" }
+version = { attr = "tickclean.__version__" }
 
 [tool.setuptools.package-data]
-disk_cleaner = ["rules.json", "icon.ico"]
+tickclean = ["rules.json", "icon.ico"]

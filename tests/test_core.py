@@ -7,7 +7,7 @@ import tempfile
 import time
 import unittest
 
-from disk_cleaner import actions, config, scanners, software
+from tickclean import actions, config, scanners, software
 
 WIN = sys.platform == "win32"
 

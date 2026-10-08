@@ -10,10 +10,10 @@ from . import __version__, config
 
 def _setup_logging():
     config.ensure_dirs()
-    log = logging.getLogger("disk_cleaner")
+    log = logging.getLogger("tickclean")
     log.setLevel(logging.INFO)
     if not log.handlers:
-        h = logging.handlers.RotatingFileHandler(config.LOG_DIR / "disk_cleaner.log", maxBytes=512_000,
+        h = logging.handlers.RotatingFileHandler(config.LOG_DIR / "tickclean.log", maxBytes=512_000,
                                                  backupCount=3, encoding="utf-8")
         h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
         log.addHandler(h)
@@ -60,7 +60,7 @@ def main(argv=None):
         sys.stdout = open(os.devnull, "w")
     if sys.stderr is None:
         sys.stderr = open(os.devnull, "w")
-    p = argparse.ArgumentParser(prog="disk_cleaner", description="Find and remove unused files and programs, with reasons.")
+    p = argparse.ArgumentParser(prog="tickclean", description="Find and remove unused files and programs, with reasons.")
     p.add_argument("--version", action="version", version=__version__)
     p.add_argument("--scan", action="store_true", help="print findings to the console and exit")
     p.add_argument("--json", action="store_true", help="with --scan, output JSON")
@@ -72,7 +72,7 @@ def main(argv=None):
     a = p.parse_args(argv)
 
     if sys.platform != "win32":
-        print("Disk Cleaner currently supports Windows 10/11 only.", file=sys.stderr)
+        print("TickClean currently supports Windows 10/11 only.", file=sys.stderr)
         return 2
     log = _setup_logging()
     try:

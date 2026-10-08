@@ -5,5 +5,5 @@ import shutil
 import tempfile
 
 _home = tempfile.mkdtemp(prefix="dc_test_home_")
-os.environ["DISK_CLEANER_HOME"] = _home
+os.environ["TICKCLEAN_HOME"] = _home
 atexit.register(shutil.rmtree, _home, True)

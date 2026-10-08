@@ -10,8 +10,8 @@ import time
 import unittest
 from unittest import mock
 
-from disk_cleaner import actions, config, scanners, util
-from disk_cleaner.models import Finding, SAFE
+from tickclean import actions, config, scanners, util
+from tickclean.models import Finding, SAFE
 
 WIN = sys.platform == "win32"
 
