@@ -258,6 +258,11 @@ class Overlay:
         s.bind("<Configure>", self._layout)
         s.focus_set()
         setattr(app, slot, self)
+        s.after(60, self._relayout)  # text wraps once the width is known, so measure the content again
+
+    def _relayout(self):
+        if self.alive():
+            self._layout()
 
     def _layout(self, _e=None):
         s, px = self.scrim, self.app._px
@@ -266,7 +271,7 @@ class Overlay:
             return
         if self.h is None:
             self.inner.update_idletasks()
-            want = max(px(170), self.head.winfo_reqheight() + self.foot.winfo_reqheight() + self.body.winfo_reqheight() + px(30))
+            want = max(px(170), self.head.winfo_reqheight() + self.foot.winfo_reqheight() + self.body.winfo_reqheight() + px(40))
         else:
             want = px(self.h)
         W, H = min(px(self.w), cw - px(40)), int(min(want, ch - px(40)))
@@ -400,7 +405,9 @@ class App(tk.Tk):
         st.configure("TCheckbutton", background=BG)
         st.map("TCheckbutton", indicatorcolor=[("selected", TEAL), ("!selected", WHITE)], background=[("active", BG)])
         st.configure("TEntry", fieldbackground=WHITE, bordercolor=BORDER)
-        st.configure("TCombobox", fieldbackground=WHITE, bordercolor=BORDER, arrowcolor=MUTED)
+        st.configure("TCombobox", fieldbackground=WHITE, bordercolor=BORDER, arrowcolor=MUTED, background=WHITE)
+        st.map("TCombobox", fieldbackground=[("readonly", WHITE), ("disabled", BG)],
+               selectbackground=[("readonly", WHITE)], selectforeground=[("readonly", INK)])
         st.configure("TSpinbox", fieldbackground=WHITE, bordercolor=BORDER, arrowcolor=MUTED)
         st.layout("Slim.Vertical.TScrollbar", [("Vertical.Scrollbar.trough", {"sticky": "ns", "children": [
             ("Vertical.Scrollbar.thumb", {"expand": "1", "sticky": "nswe"})]})])
@@ -1023,9 +1030,15 @@ class App(tk.Tk):
         box = tk.Frame(body, bg=WHITE, highlightthickness=1, highlightbackground=BORDER)
         box.pack(fill="both", expand=True)
         sb = ttk.Scrollbar(box, orient="vertical", style="Slim.Vertical.TScrollbar")
-        sb.pack(side="right", fill="y")
+
+        def on_scroll(first, last):
+            sb.set(first, last)
+            if float(first) <= 0.0 and float(last) >= 1.0:
+                sb.pack_forget()
+            elif not sb.winfo_ismapped():
+                sb.pack(side="right", fill="y", before=t)
         t = tk.Text(box, wrap="word", font=("Consolas", 10), relief="flat", bg=WHITE, fg=INK, padx=px(14),
-                    pady=px(10), width=10, height=5, yscrollcommand=sb.set, highlightthickness=0)
+                    pady=px(10), width=10, height=5, yscrollcommand=on_scroll, highlightthickness=0)
         sb.config(command=t.yview)
         t.pack(side="left", fill="both", expand=True)
         t.tag_config("ok", foreground="#15803d", font=("Consolas", 10, "bold"))
@@ -1119,7 +1132,7 @@ class App(tk.Tk):
 
     def open_settings(self):
         px = self._px
-        win, body, foot = self._dialog(700, 630, "Settings",
+        win, body, foot = self._dialog(700, None, "Settings",
                                        "Tell Disk Cleaner where to look and what counts as old. Nothing here deletes anything.")
 
         def textbox(card, title, hint, lines, top=0):
@@ -1201,7 +1214,7 @@ class App(tk.Tk):
         st["first_run_done"] = True
         config.save_state(st)
         s = self.cfg["schedule"]
-        win, body, foot = self._dialog(620, 470, "Welcome to Disk Cleaner",
+        win, body, foot = self._dialog(620, None, "Welcome to Disk Cleaner",
                                        "Free up disk space, safely.")
         pts = tk.Frame(body, bg=BG)
         pts.pack(fill="x")
@@ -1266,7 +1279,7 @@ class App(tk.Tk):
     def open_schedule(self):
         px = self._px
         s = self.cfg["schedule"]
-        win, body, foot = self._dialog(640, 560, "Schedule",
+        win, body, foot = self._dialog(640, None, "Schedule",
                                        "Run a background scan on a schedule. The window opens only when there is enough "
                                        "to clean up or the drive is nearly full; otherwise it exits silently. "
                                        "Nothing is deleted without you ticking it.")
