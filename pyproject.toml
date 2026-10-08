@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "disk-cleaner"
+dynamic = ["version"]
+description = "Windows disk cleaner that lists unused files and programs with a reason for each, and deletes only what you tick."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Disk Cleaner contributors" }]
+keywords = ["windows", "disk-cleanup", "cleaner", "storage", "tkinter"]
+dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Win32 (MS Windows)",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: System :: Systems Administration",
+  "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/nalinkaggarwal/disk-cleaner"
+Issues = "https://github.com/nalinkaggarwal/disk-cleaner/issues"
+Changelog = "https://github.com/nalinkaggarwal/disk-cleaner/blob/main/CHANGELOG.md"
+
+[project.scripts]
+disk-cleaner = "disk_cleaner.__main__:main"
+
+[project.gui-scripts]
+disk-cleaner-gui = "disk_cleaner.__main__:main"
+
+[tool.setuptools]
+packages = ["disk_cleaner"]
+
+[tool.setuptools.dynamic]
+version = { attr = "disk_cleaner.__version__" }
+
+[tool.setuptools.package-data]
+disk_cleaner = ["rules.json", "icon.ico"]

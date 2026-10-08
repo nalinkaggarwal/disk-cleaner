@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.idea/
+.vscode/
+*.bak
+plan_*.json
+result_*.json
+dist/
+specs/
+*.spec
+version_info.txt

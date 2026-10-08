@@ -1,0 +1,15 @@
+name: Suggestion or new rule
+description: Propose a feature, or something Disk Cleaner should (or should not) suggest removing
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it safe and useful?
+      description: For a new item to suggest, explain what it is, how to tell it is unused, what happens if it is deleted, and how it comes back.

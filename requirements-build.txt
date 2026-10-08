@@ -1,0 +1,2 @@
+# Exact build tool used for release exes (reproducible builds). Dependabot-style updates: bump deliberately.
+pyinstaller==6.22.3

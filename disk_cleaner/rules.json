@@ -1,0 +1,17 @@
+{
+  "_comment": "Community-editable rules. 'pattern' is a case-insensitive regex matched against the program's name in Add/Remove Programs. 'risk' is SAFE or REVIEW. Nothing is ever removed without the user ticking it.",
+  "software": [
+    {
+      "id": "adware",
+      "pattern": "RelevantKnowledge|WildTangent|McAfee (Security Scan|Safe Connect|WebAdvisor)|Free MP3 Cutter|Ask Toolbar|^Conduit|^Babylon|MyWebSearch|SearchProtect|OpenCandy|Web Companion|Driver Booster|Wajam",
+      "reason": "Commonly reported as adware or unwanted bundled software: it tends to arrive with free downloads, run in the background and show ads or change browser settings. Nothing else usually depends on it, but check that you do not use it before removing.",
+      "risk": "REVIEW"
+    },
+    {
+      "id": "oem-utility",
+      "pattern": "^HP (JumpStart|CoolSense|Connection Optimizer|ePrint|Support Assistant|Audio Switch)|NVIDIA GeForce Experience",
+      "reason": "Pre-installed manufacturer utility that starts background services and scheduled tasks at boot. The hardware and driver work without it; Windows Settings covers the same features.",
+      "risk": "REVIEW"
+    }
+  ]
+}

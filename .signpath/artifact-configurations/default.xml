@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tells SignPath what to sign. The release workflow uploads a zip containing only DiskCleaner.exe.
+     product-name and product-version are enforced: signing fails if the exe's embedded metadata differs. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <pe-file path="DiskCleaner.exe" product-name="Disk Cleaner" product-version="${version}">
+      <authenticode-sign/>
+    </pe-file>
+  </zip-file>
+</artifact-configuration>
